@@ -310,7 +310,6 @@ DisplayObjectContainer.prototype.validateProperties = function(child){
 	child.stageY = child.y + this.stageY;
 }
 
-
 /**
  * 将一个 DisplayObject 子实例添加到该 DisplayObjectContainer 实例中。
  * @return {DisplayObject} 添加的实例
@@ -474,21 +473,24 @@ Sprite.prototype.render = function(){
 /**
  * Bitmap 类表示用于表示位图图像的显示对象。
  */
-function Bitmap(bitmapData,config){
+function Bitmap(bitmapData,rect,config){
 	DisplayObject.call(this,config);
 	this.bitmapData = bitmapData;
+	this.rect = rect;
+	trace(rect);
 }
 
 Flex.inherit(Bitmap,DisplayObject);
 Bitmap.prototype.render = function(){
 	var bd = this.bitmapData;
+	var rect = this.rect;
 	if(bd.loaded){
-		Flex.context.drawImage(bd.content,bd.x,bd.y,bd.width,bd.height,this.stageX,this.stageY,bd.width,bd.height);
+		Flex.context.drawImage(bd.content,rect.x,rect.y,rect.w,rect.h,this.stageX,this.stageY,rect.w,rect.h);
 	}
 }
 
 /**
- * 
+ * 继承Image 保存Image的信息
  */
 function BitmapData(x,y,width,height){
 	Image.constructor.call(this);
@@ -498,8 +500,18 @@ BitmapData.prototype.loaded = false;
 BitmapData.prototype.content = null;
 BitmapData.prototype.onload = function(){
 	this.content = this;
-	trace("loaded",this,this.width,this.height);
 	this.loaded = true;
+}
+
+/**
+ * Rectangle 对象是按其位置（由它左上角的点 (x, y) 确定）以及宽度和高度定义的区域。 
+ */
+function Rectangle(config){
+	config = config || {};
+	this.x = config.y || 0;
+	this.y = config.y || 0;
+	this.width = config.width || 0;
+	this.height = config.height || 0;
 }
 
 /**
