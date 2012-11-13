@@ -257,7 +257,6 @@ Graphics.prototype = {
 function Shape(config) {
 	DisplayObject.call(this, config);
 	this._graphics = null;
-	this._steps = [];//保存绘制的步骤和顺序
 	Object.defineProperties(this, {
 		graphics : {
 			/**
@@ -431,6 +430,46 @@ function Stage(config){
 }
 
 Flex.inherit(Stage,DisplayObjectContainer);
+
+/**
+ * Sprite 类是基本显示列表构造块：一个可显示图形并且也可包含子项的显示列表节点。
+ */
+function Sprite(config){
+	DisplayObjectContainer.call(this,config);
+	this._graphics = null;
+	Object.defineProperties(this, {
+		graphics : {
+			/**
+			 * 只有在使用的时候才进行实例化
+			 */
+			get : function() {
+				if(!this._graphics) {
+					this._graphics = new Graphics(this);
+				}
+				return this._graphics;
+			}
+		}
+	});
+}
+
+Flex.inherit(Sprite,DisplayObjectContainer);
+/**
+ * 允许用户拖动指定的 Sprite。
+ * @param {Rect}  
+ */
+Sprite.prototype.startDrag = function(bounds){
+	
+}
+/**
+ * 结束 startDrag() 方法。
+ */
+Sprite.prototype.stopDrag = function(){
+	
+}
+
+Sprite.prototype.render = function(){
+	this.graphics.render();
+}
 
 /**
  * 线条的风格 静态常量
