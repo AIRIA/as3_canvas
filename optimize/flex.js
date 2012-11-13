@@ -197,19 +197,26 @@ Graphics.prototype = {
 	 * @param {String} 线条的风格
 	 */
 	lineStyle : function(weight, color, lineCap) {
-		this._steps.push();
-		Flex.context.strokeStyle = color;
-		Flex.context.lineWidth = weight;
-		Flex.context.lineCap = lineCap;
+		var steps = this._steps;
+		steps.push({prop:"strokeStyle",value:color});
+		steps.push({prop:'lineWidth',value:weight});
+		steps.push({prop:'lineCap',value:lineCap});
+	},
+	/**
+	 * 清楚已经话的内容
+	 */
+	clear:function(){
+		this._steps.length = 0;
 	},
 	drawRect : function(x, y, width, height) {
-		Flex.context.fillRect(this.owner.stageX + x, this.owner.stageY + y, width, height);
+		this._steps.push({prop:'fillRect',value:[this.owner.stageX + x,this.owner.stageY + y,width,height]});
 	},
 	drawCircle : function(x, y, radius) {
-		Flex.context.beginPath();
-		Flex.context.arc(this.owner.stageX + x, this.owner.stageY + y, radius, 0, Math.PI * 2, false);
-		Flex.context.fill();
-		Flex.context.stroke();
+		var steps = this._steps;
+		steps.push({prop:'beginPath',value:[]});
+		steps.push({prop:'arc',value:[this.owner.stageX + x, this.owner.stageY + y, radius, 0, Math.PI * 2, false]});
+		steps.push({prop:'fill',value:[]});
+		steps.push({prop:'stroke',value:[]});
 	},
 	/**
 	 *
@@ -218,10 +225,29 @@ Graphics.prototype = {
 		Flex.context.restore();
 	},
 	lineTo : function(x, y) {
-		Flex.context.lineTo(this.owner.stageX + x, this.owner.stageY + y);
+		this._steps.push({prop:'lineTo',value:[this.owner.stageX + x, this.owner.stageY + y]});
 	},
 	moveTo : function(x, y) {
-		Flex.context.moveTo(this.owner.stageX + x, this.owner.stageY + y);
+		this._steps.push({prop:'moveTo',value:[this.owner.stageX + x, this.owner.stageY + y]});
+	},
+	/**
+	 * 渲染graphics的步骤
+	 */
+	render:function(){
+		var currentStep;
+		var steps = this._steps;
+		var context = Flex.context;
+		//执行steps中保存的步骤
+		for(var i=0;i<steps.length;i++){
+			currentStep = steps[i];
+			var prop = context[currentStep.prop];
+			var val = currentStep.value;
+			if(prop instanceof Function){
+				prop.apply(context,val);
+			}else{
+				prop = currentStep.value;
+			}
+		}
 	}
 }
 
@@ -250,7 +276,7 @@ function Shape(config) {
 Flex.inherit(Shape, DisplayObject);
 
 Shape.prototype.render = function(){
-	trace("invoke");
+	this.graphics.render();
 }
 
 /**
