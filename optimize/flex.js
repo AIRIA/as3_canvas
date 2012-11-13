@@ -472,6 +472,37 @@ Sprite.prototype.render = function(){
 }
 
 /**
+ * Bitmap 类表示用于表示位图图像的显示对象。
+ */
+function Bitmap(bitmapData,config){
+	DisplayObject.call(this,config);
+	this.bitmapData = bitmapData;
+}
+
+Flex.inherit(Bitmap,DisplayObject);
+Bitmap.prototype.render = function(){
+	var bd = this.bitmapData;
+	if(bd.loaded){
+		Flex.context.drawImage(bd.content,bd.x,bd.y,bd.width,bd.height,this.stageX,this.stageY,bd.width,bd.height);
+	}
+}
+
+/**
+ * 
+ */
+function BitmapData(x,y,width,height){
+	Image.constructor.call(this);
+}
+Flex.inherit(BitmapData,Image);
+BitmapData.prototype.loaded = false;
+BitmapData.prototype.content = null;
+BitmapData.prototype.onload = function(){
+	this.content = this;
+	trace("loaded",this,this.width,this.height);
+	this.loaded = true;
+}
+
+/**
  * 线条的风格 静态常量
  */
 var LineCap = {
