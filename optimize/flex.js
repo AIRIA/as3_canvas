@@ -432,6 +432,8 @@ DisplayObjectContainer.prototype.swapChildren = function(child1, child2) {
 
 function Stage(config){
 	DisplayObjectContainer.call(this,config);
+	this.stageWidth = Flex.global.width;
+	this.stageHeight = Flex.global.height;
 }
 
 Flex.inherit(Stage,DisplayObjectContainer);
@@ -511,7 +513,7 @@ Bitmap.prototype.render = function(){
 		rect = bd.getRect();
 	}
 	if(bd.loaded){
-		Flex.context.drawImage(bd.content,rect.x,rect.y,rect.w,rect.h,this.stageX,this.stageY,rect.w,rect.h);
+		Flex.context.drawImage(bd.content,rect.x,rect.y,rect.w,rect.h,this.stageX,this.stageY,this.width,this.height);
 	}
 }
 
