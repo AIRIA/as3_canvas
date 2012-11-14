@@ -116,6 +116,7 @@ function DisplayObject(config) {
 	this.mask = null;
 	this.id
 	this.parent = null;
+	this.context = Flex.context;
 	Object.defineProperties(this, {
 		width : {
 			get : function() {
@@ -477,7 +478,6 @@ function Bitmap(bitmapData,rect,config){
 	DisplayObject.call(this,config);
 	this.bitmapData = bitmapData;
 	this.rect = rect;
-	trace(rect);
 }
 
 Flex.inherit(Bitmap,DisplayObject);
@@ -502,6 +502,63 @@ BitmapData.prototype.onload = function(){
 	this.content = this;
 	this.loaded = true;
 }
+/**
+ * TextFormat 类描述字符格式设置信息。 使用 TextFormat 类可以为文本字段创建特定的文本格式
+ */
+function TextForamt(config){
+	config = config || {};
+	//文字应用的字体
+	this.fontFamily = config.fontFamily||'Arial';
+	//字体大小
+	this.fontSize = config.fontSize||12;
+	//字体的粗细
+	this.fontWeight = config.fontWeight||'normal';
+	//文字对齐方式
+	this.textAlign = config.textAlign||TextAlign.START;
+	//文字的基线
+	this.textBaseline = config.textBaseline||TextBaseline.TOP;
+	//文字填充的样式 例如#333333 或者 rgba(12,12,12,0.4);
+	this.fillStyle = config.fillStyle||'#333333';
+}
+
+/**
+ * TextField 类用于创建显示对象以显示和输入文本。
+ */
+function TextField(config){
+	DisplayObject.call(this,config);
+	config = config || {}
+	this.label = null;
+	this.fontSize = config.fontSize || 12;
+	this.fillStyle = config.fillStyle || '#333333';
+	this.textAlign = config.textAlign||TextAlign.CENTER;
+	this.textBaseline = config.textBaseline||TextBaseline.TOP;
+	this.fontFamily = config.fontFamily||'Arial';
+	this.fontWeight = config.fontWeight||'normal';
+	this.textFormat = null;
+}
+Flex.inherit(TextField,DisplayObject);
+
+TextField.prototype.render = function(){
+	if(this.label.length){
+		var context = this.context;
+		var style = this.textFormat?this.textFormat:this;
+		context.save();
+		context.fillStyle = style.fillStyle; 
+		context.font = style.fontWeight+" "+style.fontSize+"px "+style.fontFamily;
+		context.textAlign = style.textAlign;
+		context.textBaseline = style.textBaseline;
+		context.fillText(this.label,this.stageX,this.stageY);
+		context.restore();
+	}
+	
+}
+
+/**
+ * 
+ */
+function Button(){
+	
+}
 
 /**
  * Rectangle 对象是按其位置（由它左上角的点 (x, y) 确定）以及宽度和高度定义的区域。 
@@ -512,6 +569,28 @@ function Rectangle(config){
 	this.y = config.y || 0;
 	this.width = config.width || 0;
 	this.height = config.height || 0;
+}
+//-----------Consts-------------------
+/**
+ * 文本对齐方式
+ */
+var TextAlign = {
+	START:'start',
+	END:'end',
+	LEFT:'left',
+	RIGHT:'right',
+	CENTER:'center'
+}
+/**
+ * 文本的基线
+ */
+var TextBaseline = {
+	TOP:'top',
+	HANGING:'hanging',
+	MIDDLE:'middle',
+	ALPHABETIC:'alphabetic',
+	IDEOGRAPHIC:'ideographic',
+	BOTTOM:'bottom'
 }
 
 /**
