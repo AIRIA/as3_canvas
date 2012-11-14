@@ -172,7 +172,12 @@ DisplayObject.prototype.getBounds = function() {
 }
 
 DisplayObject.prototype.getRect = function() {
-	//TO-DO
+	return new Rectangle({
+		x:this.x,
+		y:this.y,
+		w:this.width,
+		h:this.height
+	});
 }
 
 DisplayObject.prototype.render = function() {
@@ -478,8 +483,10 @@ function Bitmap(bitmapData,rect,config){
 	DisplayObject.call(this,config);
 	this.bitmapData = bitmapData;
 	this._rect = rect;
-	this.width = rect.w;
-	this.height = rect.h;
+	if(rect){
+		this.width = rect.w;
+		this.height = rect.h;
+	}
 	Object.defineProperties(this,{
 		rect:{
 			get:function(){
@@ -500,6 +507,9 @@ Flex.inherit(Bitmap,DisplayObject);
 Bitmap.prototype.render = function(){
 	var bd = this.bitmapData;
 	var rect = this.rect;
+	if(!rect){
+		rect = bd.getRect();
+	}
 	if(bd.loaded){
 		Flex.context.drawImage(bd.content,rect.x,rect.y,rect.w,rect.h,this.stageX,this.stageY,rect.w,rect.h);
 	}
@@ -518,6 +528,16 @@ BitmapData.prototype.onload = function(){
 	this.content = this;
 	this.loaded = true;
 }
+
+BitmapData.prototype.getRect = function(){
+	return new Rectangle({
+		x:this.x,
+		y:this.y,
+		w:this.width,
+		h:this.height
+	});
+}
+
 /**
  * TextFormat 类描述字符格式设置信息。 使用 TextFormat 类可以为文本字段创建特定的文本格式
  */
@@ -686,8 +706,8 @@ function Rectangle(config){
 	config = config || {};
 	this.x = config.y || 0;
 	this.y = config.y || 0;
-	this.width = config.width || 0;
-	this.height = config.height || 0;
+	this.w = config.w || 0;
+	this.h = config.h || 0;
 }
 //-----------Consts-------------------
 /**
