@@ -477,7 +477,23 @@ Sprite.prototype.render = function(){
 function Bitmap(bitmapData,rect,config){
 	DisplayObject.call(this,config);
 	this.bitmapData = bitmapData;
-	this.rect = rect;
+	this._rect = rect;
+	this.width = rect.w;
+	this.height = rect.h;
+	Object.defineProperties(this,{
+		rect:{
+			get:function(){
+				return this._rect;
+			},
+			set:function(value){
+				if(this._rect!=value){
+					this._rect = value;
+					this.width = value.w;
+					this.height = value.h;
+				}
+			}
+		}
+	});
 }
 
 Flex.inherit(Bitmap,DisplayObject);
@@ -622,6 +638,46 @@ function Button(upskin,downskin,config){
 }
 Flex.inherit(Button,DisplayObjectContainer);
 
+function HGroup(config){
+	config = config || {};
+	Sprite.call(this,config);
+	/**
+	 * 元素于元素之间的间距
+	 */
+	this.gap = config.gap||0;
+}
+
+Flex.inherit(HGroup,Sprite);
+
+/**
+ * 刷新布局
+ */
+HGroup.prototype.layout = function(){
+	this.width = 0;
+	var children = this.getChildren();
+	for(var i=0;i<this.numChildren;i++){
+		if(i){
+			children[i].x = this.width+this.gap;
+		}else{
+			children[i].x = 0;
+		}
+	}
+	this.width = children[this.numChildren-1].x+children[this.numChildren].width;
+}
+
+/**
+ * @override 
+ */
+HGroup.prototype.addChild = function(child){
+	Sprite.prototype.addChild.call(this,child);
+	//第一个child 忽略gap
+	if(this.numChildren!=1){
+		child.x = this.width + this.gap;
+	}else{
+		child.x = 0;
+	}
+	this.width = child.x + child.width;
+}
 
 /**
  * Rectangle 对象是按其位置（由它左上角的点 (x, y) 确定）以及宽度和高度定义的区域。 
