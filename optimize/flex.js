@@ -530,11 +530,24 @@ function TextField(config){
 	this.label = null;
 	this.fontSize = config.fontSize || 12;
 	this.fillStyle = config.fillStyle || '#333333';
-	this.textAlign = config.textAlign||TextAlign.CENTER;
+	this.textAlign = config.textAlign||TextAlign.START;
 	this.textBaseline = config.textBaseline||TextBaseline.TOP;
 	this.fontFamily = config.fontFamily||'Arial';
 	this.fontWeight = config.fontWeight||'normal';
 	this.textFormat = null;
+	Object.defineProperties(this,{
+		//[Read-Only]
+		textWidth:{
+			get:function(){
+				var context = this.context;
+				var style = this.textFormat?this.textFormat:this;
+				context.save();
+				context.font = style.fontWeight+" "+style.fontSize+"px "+style.fontFamily;
+				this._textWidth = context.measureText(this.label).width;
+				return this._textWidth;
+			}
+		}
+	})
 }
 Flex.inherit(TextField,DisplayObject);
 
@@ -550,15 +563,65 @@ TextField.prototype.render = function(){
 		context.fillText(this.label,this.stageX,this.stageY);
 		context.restore();
 	}
-	
 }
 
 /**
- * 
+ * Button 组件表示常用的矩形按钮
  */
-function Button(){
-	
+function Button(upskin,downskin,config){
+	config = config ||{};
+	DisplayObjectContainer.call(this,config);
+	/**
+	 * 正常的皮肤
+	 */
+	this.upSkin = upskin;
+	/**
+	 * 按下的皮肤
+	 */
+	this.downSkin = downskin;
+	this._currentSkin = this.upSkin;
+	this._label = config.label;
+	this._textField = null;
+	this._textFormat = null;
+	Object.defineProperties(this,{
+		label:{
+			get:function(){
+				return this._label;
+			},
+			set:function(value){
+				if(this._label!=value){
+					this._label = value;
+					if(!this._textField){
+						this._textField = new TextField();
+						this.addChild(this._textField);
+					}
+					this._textField.label = this._label;
+				}
+			}
+		},
+		currentSkin:{
+			get:function(){
+				return this._currentSkin;
+			},
+			set:function(value){
+				if(this._currentSkin!=value){
+					//皮肤发生改变的时候 如果当前皮肤已经添加到了显示列表中 先移除
+					if(this.contains(this._currentSkin)){
+						this.removeChild(this._currentSkin);
+					}else{
+						trace("set")
+						this._currentSkin = value;
+						this.addChildAt(this._currentSkin,0);
+					}
+				}else if(!this.contains(this._currentSkin)){
+					this.addChildAt(this._currentSkin,0);
+				}
+			}
+		}
+	});
 }
+Flex.inherit(Button,DisplayObjectContainer);
+
 
 /**
  * Rectangle 对象是按其位置（由它左上角的点 (x, y) 确定）以及宽度和高度定义的区域。 
