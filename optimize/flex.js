@@ -17,6 +17,7 @@ var Flex = function() {
 	 */
 	function initApp(canvasId, frameRate, targetWidth, targetHeight, realWidth, realHeight) {
 		var canvas = document.getElementById(canvasId);
+		EventManager.addHandler(canvas,"click",touchHandler);
 		if(canvas.getContext) {
 			this.context = canvas.getContext("2d");
 			this.scaleX = targetWidth/realWidth;
@@ -29,6 +30,11 @@ var Flex = function() {
 		window.stage = new Stage();
 		setInterval(enterFrame,Math.round(1000/frameRate));
 	}
+	
+	function touchHandler(event){
+		trace(event);
+	}
+	
 	/**
 	 * 每一帧都会调用此方法来重绘舞台
 	 */
@@ -71,6 +77,33 @@ var Flex = function() {
 		global:global
 	};
 }();
+
+/**
+ * 事件管理实例
+ */
+var EventManager = {
+	addHandler:function(element,type,handler){
+		if(element.addEventListener){
+			element.addEventListener(type,handler,false);
+		}else if(element.attachEvent){
+			element.attachEvent("on"+type,handler);
+		}else{
+			element["on"+type] = handler;
+		}
+	},
+	/**
+	 * 移除Dom元素注册的事件
+	 */
+	removeHandler:function(element,type,handler){
+		if(element.removeEventListener){
+			element.removeEventListener(type,handler,false);
+		}else if(element.detachEvent){
+			element.detachEvent("on"+type,handler);
+		}else{
+			element["on"+type] = null;
+		}
+	}
+}
 
 /**
  * 用来在控制台打印消息
@@ -521,14 +554,33 @@ Bitmap.prototype.render = function(){
  * 继承Image 保存Image的信息
  */
 function BitmapData(x,y,width,height){
-	Image.constructor.call(this);
-}
-Flex.inherit(BitmapData,Image);
-BitmapData.prototype.loaded = false;
-BitmapData.prototype.content = null;
-BitmapData.prototype.onload = function(){
-	this.content = this;
-	this.loaded = true;
+	this.content = null;
+	this._src = null;
+	this.loaded = false;
+	Object.defineProperties(this,{
+		src:{
+			get:function(){
+				return this._src;
+			},
+			set:function(value){
+				if(this._src!=value){
+					this._src = value;
+					if(!this.content){
+						var self = this;
+						this.content = new Image();
+						this.content.src = value;
+						this.content.onload = function(){
+							self.loaded = true;
+							self.x = this.x;
+							self.y = this.y;
+							self.width = this.width;
+							self.height = this.height;
+						}
+					}
+				}
+			}
+		}
+	});
 }
 
 BitmapData.prototype.getRect = function(){
