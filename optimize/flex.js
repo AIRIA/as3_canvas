@@ -39,30 +39,34 @@ var Flex = function() {
 	 */
 	function initEventListener(canvas){
 		if(window.navigator.userAgent.indexOf("Android")==-1){
-			this.device = "pc";
+			Flex.device = "pc";
 			TouchEvent.TOUCH_END = "click";
 			TouchEvent.TOUCH_START = "mousedown";
 			TouchEvent.TOUCH_MOVE = "mousemove";
 		}
 		EventManager.addHandler(canvas,TouchEvent.TOUCH_START,touchStartHandler);
-		EventManager.addHandler(canvas,TouchEvent.TOUCH_END,touchEndHandler);	
+		EventManager.addHandler(canvas,TouchEvent.TOUCH_END,touchEndHandler);
 	}
 	
 	function touchStartHandler(event){
-		//禁止滚动
-		event.preventDefault();
 		//按下的时候 才开始监听touchmove事件
 		EventManager.addHandler(event.target,TouchEvent.TOUCH_MOVE,touchMoveHandler);
 		startEventListener(event,stage);
 	}
 	
 	function touchMoveHandler(event){
+		//禁止滚动
+		event.preventDefault();
 		startEventListener(event,stage);
 	}
 	
 	function touchEndHandler(event){
 		EventManager.removeHandler(event.target,TouchEvent.TOUCH_MOVE,touchMoveHandler);
-		startEventListener(event,stage);
+		try{
+			startEventListener(event,stage);
+		}catch(err){
+			alert(err)
+		}
 	}
 	/**
 	 * 每次触发事件的时候 启动事件监听器 
@@ -72,8 +76,10 @@ var Flex = function() {
 		var touch;
 		if(Flex.device=="pc"){
 			touch = event;
-		}else{
+		}else if(event.type == TouchEvent.TOUCH_START){
 			touch = event.touches[0];
+		}else{
+			touch = event.changedTouches[0];
 		}
 		
 		var numChildren = displayObj.numChildren;
