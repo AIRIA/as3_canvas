@@ -7,7 +7,7 @@ var Flex = function() {
 	//canvas 上下文
 	var global = {};
 	
-	var device = "pc";
+	var device = "mobile";
 	
 	/**
 	 * 在程序执行前必须 初始化程序
