@@ -17,7 +17,7 @@ var Flex = function() {
 	 */
 	function initApp(canvasId, frameRate, targetWidth, targetHeight, realWidth, realHeight) {
 		var canvas = document.getElementById(canvasId);
-		EventManager.addHandler(canvas,"click",touchHandler);
+		EventManager.addHandler(canvas,"touchstart",touchHandler);
 		if(canvas.getContext) {
 			this.context = canvas.getContext("2d");
 			this.scaleX = targetWidth/realWidth;
@@ -32,7 +32,8 @@ var Flex = function() {
 	}
 	
 	function touchHandler(event){
-		trace(event);
+		alert(event.touches[0].pageX);
+		event.preventDefault();
 	}
 	
 	/**
