@@ -17,7 +17,8 @@ var Flex = function() {
 	 */
 	function initApp(canvasId, frameRate, targetWidth, targetHeight, realWidth, realHeight) {
 		var canvas = document.getElementById(canvasId);
-		EventManager.addHandler(canvas,"touchstart",touchHandler);
+		EventManager.addHandler(canvas,"touchstart",touchStartHandler);
+		EventManager.addHandler(canvas,"touchend",touchEndHandler);
 		if(canvas.getContext) {
 			this.context = canvas.getContext("2d");
 			this.scaleX = targetWidth/realWidth;
@@ -31,9 +32,39 @@ var Flex = function() {
 		setInterval(enterFrame,Math.round(1000/frameRate));
 	}
 	
-	function touchHandler(event){
-		alert(event.touches[0].pageX);
+	function touchStartHandler(event){
+		//禁止滚动
 		event.preventDefault();
+		//按下的时候 才开始监听touchmove事件
+		EventManager.addHandler(event.target,"touchmove",touchMoveHandler);
+	}
+	
+	function touchMoveHandler(event){
+		
+	}
+	
+	function touchEndHandler(event){
+		EventManager.removeHandler(canvas,"touchmove",touchMoveHandler);
+	}
+	/**
+	 * 每次触发事件的时候 启动事件监听器 
+	 */
+	function startEventListener(event,displayObj)
+	{
+		var numChildren = displayObj.numChildren;
+		if(numChildren){
+			//如果有子项的话  就递归调用此方法 直到最内层的元素
+			var children = displayObj.getChildren();
+			for(var i=numChildren-1;i>=0;i--){
+				arguments.callee(event,children[i]);
+			}
+		}else{
+			//将event事件对象传入每个显示对象的mouseEvent方法中 根据event的信息来判断是不是要调用注册的回调函数
+			displayObj.mouseEvent(event);
+			// if(app.stopPropagation||app.stopImmediatePropagation){
+				// throw new Error();
+			// }
+		}
 	}
 	
 	/**
@@ -78,6 +109,69 @@ var Flex = function() {
 		global:global
 	};
 }();
+
+/**
+ * FlexEvent 类作为创建 Event 对象的基类，当发生事件时，Event 对象将作为参数传递给事件侦听器。 
+ */
+function FlexEvent(type){
+	/**
+	 * 事件目标
+	 */
+	this.target = null;
+	/**
+	 * 事件类型
+	 */
+	this.type = type;
+}
+
+FlexEvent.prototype.stopPropagation = function(){
+	//TO-DO
+}
+
+FlexEvent.prototype.stopImmediatePropagation = function(){
+	//TO-DO
+}
+
+/**
+ * EventDispatcher 用于添加或删除事件侦听器的方法，检查是否已注册特定类型的事件侦听器，并调度事件。，并且是 DisplayObject 类的基类。
+ */
+function EventDispatcher(){
+	 this.events = {};
+}
+
+EventDispatcher.prototype = {
+	constructor:EventDispatcher,
+	addEventListener:function(type,handler){
+		if(!this.events[type]){
+			this.events[type] = [];
+		}
+		var evt = this.events[type];
+		evt.push(handler);
+	},
+	hasEventListener:function(type){
+		if(this.events[type].lenght){
+			return true;
+		}
+		return false;
+	},
+	removeEventListener:function(type,handler){
+		var evt = this.events[type];
+		if(evt.length){
+			var index = evt.indexOf(handler);
+			if(index!=-1){
+				evt.splice(index,1);
+			}
+		}
+	},
+	dispatchEvent:function(event){
+		event.target = this;
+		var evt = this.events[event.type];
+		for(var i=0;i<evt.length;i++){
+			evt[i].call(this,event);
+		}
+	}
+}
+
 
 /**
  * 事件管理实例
@@ -135,6 +229,7 @@ function trace() {
  * @param {Object} 配置一些属性
  */
 function DisplayObject(config) {
+	EventDispatcher.call(this);
 	config = config || {};
 	this._x = config.x || 0;
 	this._y = config.y || 0;
@@ -200,6 +295,8 @@ function DisplayObject(config) {
 		}
 	});
 }
+
+Flex.inherit(DisplayObject,EventDispatcher);
 
 DisplayObject.prototype.getBounds = function() {
 	//TO-DO
