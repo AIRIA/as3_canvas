@@ -6,6 +6,9 @@ var Flex = function() {
 	var context;
 	//canvas 上下文
 	var global = {};
+	
+	var device = "pc";
+	
 	/**
 	 * 在程序执行前必须 初始化程序
 	 * @param {String} Dom中的Id
@@ -17,8 +20,8 @@ var Flex = function() {
 	 */
 	function initApp(canvasId, frameRate, targetWidth, targetHeight, realWidth, realHeight) {
 		var canvas = document.getElementById(canvasId);
-		EventManager.addHandler(canvas,"touchstart",touchStartHandler);
-		EventManager.addHandler(canvas,"touchend",touchEndHandler);
+		//初始化事件监听器
+		initEventListener(canvas);
 		if(canvas.getContext) {
 			this.context = canvas.getContext("2d");
 			this.scaleX = targetWidth/realWidth;
@@ -31,26 +34,48 @@ var Flex = function() {
 		window.stage = new Stage();
 		setInterval(enterFrame,Math.round(1000/frameRate));
 	}
+	/**
+	 * 根据设备类型初始化事件监听器
+	 */
+	function initEventListener(canvas){
+		if(window.navigator.userAgent.indexOf("Android")==-1){
+			this.device = "pc";
+			TouchEvent.TOUCH_END = "click";
+			TouchEvent.TOUCH_START = "mousedown";
+			TouchEvent.TOUCH_MOVE = "mousemove";
+		}
+		EventManager.addHandler(canvas,TouchEvent.TOUCH_START,touchStartHandler);
+		EventManager.addHandler(canvas,TouchEvent.TOUCH_END,touchEndHandler);	
+	}
 	
 	function touchStartHandler(event){
 		//禁止滚动
 		event.preventDefault();
 		//按下的时候 才开始监听touchmove事件
-		EventManager.addHandler(event.target,"touchmove",touchMoveHandler);
+		EventManager.addHandler(event.target,TouchEvent.TOUCH_MOVE,touchMoveHandler);
+		startEventListener(event,stage);
 	}
 	
 	function touchMoveHandler(event){
-		
+		startEventListener(event,stage);
 	}
 	
 	function touchEndHandler(event){
-		EventManager.removeHandler(canvas,"touchmove",touchMoveHandler);
+		EventManager.removeHandler(event.target,TouchEvent.TOUCH_MOVE,touchMoveHandler);
+		startEventListener(event,stage);
 	}
 	/**
 	 * 每次触发事件的时候 启动事件监听器 
 	 */
 	function startEventListener(event,displayObj)
 	{
+		var touch;
+		if(Flex.device=="pc"){
+			touch = event;
+		}else{
+			touch = event.touches[0];
+		}
+		
 		var numChildren = displayObj.numChildren;
 		if(numChildren){
 			//如果有子项的话  就递归调用此方法 直到最内层的元素
@@ -60,7 +85,9 @@ var Flex = function() {
 			}
 		}else{
 			//将event事件对象传入每个显示对象的mouseEvent方法中 根据event的信息来判断是不是要调用注册的回调函数
-			displayObj.mouseEvent(event);
+			if(displayObj.isUnderPoint(touch)){
+				displayObj.dispatchEvent(event);				
+			}
 			// if(app.stopPropagation||app.stopImmediatePropagation){
 				// throw new Error();
 			// }
@@ -106,7 +133,8 @@ var Flex = function() {
 		inherit : inherit,
 		initApp:initApp,
 		context : context,
-		global:global
+		global:global,
+		device:device
 	};
 }();
 
@@ -166,8 +194,10 @@ EventDispatcher.prototype = {
 	dispatchEvent:function(event){
 		event.target = this;
 		var evt = this.events[event.type];
-		for(var i=0;i<evt.length;i++){
-			evt[i].call(this,event);
+		if(evt){
+			for(var i=0;i<evt.length;i++){
+				evt[i].call(this,event);
+			}
 		}
 	}
 }
@@ -311,9 +341,19 @@ DisplayObject.prototype.getRect = function() {
 	});
 }
 
-DisplayObject.prototype.render = function() {
-
+/**
+ * @param {TOUCHEEVENT} 必须是touch事件
+ */
+DisplayObject.prototype.isUnderPoint = function(touch){
+	var x = touch.pageX;
+	var y = touch.pageY;
+	if(x>this.stageX&&x<(this.stageX+this.width)&&y>this.stageY&&y<(this.stageY+this.height)){
+		//app.stopPropagation = true;//此处将app的stopXXX属性设置为ture 以停止事件继续传播
+		return true;
+	}
+	return false;
 }
+
 /**
  * Graphics 类包含一组可用来创建矢量形状的方法。 支持绘制的显示对象包括 Sprite 和 Shape 对象。
  * @param{DisplayObject}
@@ -900,4 +940,12 @@ var Log = {
 	ERROR : 'error',
 	INFO : 'info',
 	WARN : 'warn'
+}
+/**
+ * 触摸事件
+ */
+var TouchEvent = {
+	TOUCH_START:'touchstart',
+	TOUCH_END:'touchend',
+	TOUCH_MOVE:'touchmove'
 }
