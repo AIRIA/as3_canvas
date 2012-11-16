@@ -35,6 +35,19 @@ var Flex = function() {
 		setInterval(enterFrame,Math.round(1000/frameRate));
 	}
 	/**
+	 * 安全执行方法 避免异常退出
+	 */
+	function safeRun(handler){
+		var args = Array.prototype.slice.call(arguments);
+		args.shift();
+		try{
+			handler.apply(null,args);
+		}catch(error){
+			
+		}
+	}
+	
+	/**
 	 * 根据设备类型初始化事件监听器
 	 */
 	function initEventListener(canvas){
@@ -51,25 +64,24 @@ var Flex = function() {
 	function touchStartHandler(event){
 		//按下的时候 才开始监听touchmove事件
 		EventManager.addHandler(event.target,TouchEvent.TOUCH_MOVE,touchMoveHandler);
-		startEventListener(event,stage);
+		safeRun(startEventListener,event,stage);
 	}
 	
 	function touchMoveHandler(event){
 		//禁止滚动
 		event.preventDefault();
-		startEventListener(event,stage);
+		safeRun(startEventListener,event,stage);
 	}
 	
 	function touchEndHandler(event){
 		EventManager.removeHandler(event.target,TouchEvent.TOUCH_MOVE,touchMoveHandler);
-		try{
-			startEventListener(event,stage);
-		}catch(err){
-			alert(err)
-		}
+		safeRun(startEventListener,event,stage);
 	}
 	/**
 	 * 每次触发事件的时候 启动事件监听器 
+	 * 事件触发分为三个阶段 捕获阶段 目标阶段 冒泡阶段 
+	 * startEventListener方法 监测事件是从外到内执行的 即先从stage开始进行递归 一级一级的进行事件的监测
+	 * 循环到最内层的元素后 开始执行回调函数 然后一层一层向外父级扩散
 	 */
 	function startEventListener(event,displayObj)
 	{
@@ -92,11 +104,8 @@ var Flex = function() {
 		}else{
 			//将event事件对象传入每个显示对象的mouseEvent方法中 根据event的信息来判断是不是要调用注册的回调函数
 			if(displayObj.isUnderPoint(touch)){
-				displayObj.dispatchEvent(event);				
+					displayObj.dispatchEvent(event);
 			}
-			// if(app.stopPropagation||app.stopImmediatePropagation){
-				// throw new Error();
-			// }
 		}
 	}
 	
@@ -175,12 +184,28 @@ function EventDispatcher(){
 
 EventDispatcher.prototype = {
 	constructor:EventDispatcher,
-	addEventListener:function(type,handler){
+	/**
+	 * 添加事件监听器
+	 * @param {String} 添加的事件类型
+	 * @param {Function} 事件触发的回调函数
+	 * @param {Boolean} 是否启用捕获阶段
+	 */
+	addEventListener:function(type,handler,useCapture){
 		if(!this.events[type]){
-			this.events[type] = [];
+			this.events[type] = {
+				captureHandlers:[],
+				normalHandlers:[]
+			};
 		}
 		var evt = this.events[type];
-		evt.push(handler);
+		//捕获阶段的回调函数
+		if(useCapture){
+			evt.captureHandlers.push(handler);
+		}else{
+			//添加到目标和冒泡阶段的回调函数
+			evt.normalHandlers.push(handler);
+		}
+		
 	},
 	hasEventListener:function(type){
 		if(this.events[type].lenght){
@@ -188,23 +213,36 @@ EventDispatcher.prototype = {
 		}
 		return false;
 	},
-	removeEventListener:function(type,handler){
+	/**
+	 * 移除指定的监听器
+	 */
+	removeEventListener:function(type,handler,useCapture){
 		var evt = this.events[type];
-		if(evt.length){
-			var index = evt.indexOf(handler);
-			if(index!=-1){
-				evt.splice(index,1);
-			}
+		useCapture = useCapture || false;
+		if(useCapture){
+			FlexUtil.removeElement(evt.captureHandlers,handler);
+		}else{
+			FlexUtil.removeElement(evt.normalHandlers,handler);
 		}
 	},
 	dispatchEvent:function(event){
 		event.target = this;
 		var evt = this.events[event.type];
 		if(evt){
-			for(var i=0;i<evt.length;i++){
-				evt[i].call(this,event);
+			var normalHandlers = evt.normalHandlers;
+			var captureHandlers = evt.captureHandlers;
+			for(var i=0;i<normalHandlers.length;i++){
+				normalHandlers[i].call(this,event);
 			}
 		}
+		var parent = this.parent;
+		if(parent){
+			parent.dispatchEvent(event);
+		}else{
+			throw new Error("normal quit");
+		}
+		
+		
 	}
 }
 
@@ -907,7 +945,26 @@ function Rectangle(config){
 	this.w = config.w || 0;
 	this.h = config.h || 0;
 }
+//-----------FlexUtil-----------------
 //-----------Consts-------------------
+
+var FlexUtil = {
+	/**
+	 * 从指定的数组中移除元素
+	 * @param {Array} 要移除元素的数组
+	 * @param {Object} 要移除的元素
+	 */
+	removeElement:function(arr,ele){
+		var index = arr.indexOf(ele);
+		if(index!=-1){
+			arr.splice(index,1);
+		}else{
+			throw new Error("数组中不存在指定的元素");
+		}
+	}
+};
+
+
 /**
  * 文本对齐方式
  */
