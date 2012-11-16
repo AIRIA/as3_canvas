@@ -161,18 +161,33 @@ function FlexEvent(type){
 	 * 事件目标
 	 */
 	this.target = null;
+	
+	/**
+	 * 
+	 */
+	this.currentTarget = null;
 	/**
 	 * 事件类型
 	 */
 	this.type = type;
+	
+	/**
+	 * 指示事件是否为冒泡事件。 
+	 */
+	this.bubbles = false;
+	
+	this._stopPropagation = false;
+	this._stopImmeditaPropagation = false;
 }
 
 FlexEvent.prototype.stopPropagation = function(){
 	//TO-DO
+	this._stopPropagation = true;
 }
 
 FlexEvent.prototype.stopImmediatePropagation = function(){
 	//TO-DO
+	this._stopPropagation = true;
 }
 
 /**
@@ -241,8 +256,6 @@ EventDispatcher.prototype = {
 		}else{
 			throw new Error("normal quit");
 		}
-		
-		
 	}
 }
 
@@ -374,6 +387,10 @@ Flex.inherit(DisplayObject,EventDispatcher);
 
 DisplayObject.prototype.getBounds = function() {
 	//TO-DO
+}
+
+DisplayObject.prototype.updateProperties = function(){
+	trace("没有添加更新属性的逻辑实现",Log.WARN);
 }
 
 DisplayObject.prototype.getRect = function() {
@@ -777,7 +794,7 @@ BitmapData.prototype.getRect = function(){
 /**
  * TextFormat 类描述字符格式设置信息。 使用 TextFormat 类可以为文本字段创建特定的文本格式
  */
-function TextForamt(config){
+function TextFormat(config){
 	config = config || {};
 	//文字应用的字体
 	this.fontFamily = config.fontFamily||'Arial';
