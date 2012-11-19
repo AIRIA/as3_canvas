@@ -162,6 +162,7 @@ var Flex = function() {
 	 */
 	function inherit(subClass, supClass) {
 		subClass.prototype = new supClass;
+		subClass.superClass = supClass.prototype;
 		subClass.prototype.constructor = subClass;
 	}
 
@@ -352,8 +353,8 @@ function DisplayObject(config) {
 	this._y = config.y || 0;
 	this.stageX = config.stageX || 0;
 	this.stageY = config.stageY || 0;
-	this._width = 0;
-	this._height = 0;
+	this._width = NaN;
+	this._height = NaN;
 	/**
 	 * @property
 	 */
@@ -606,6 +607,7 @@ Flex.inherit(DisplayObjectContainer, DisplayObject);
 DisplayObjectContainer.prototype.validateProperties = function(child){
 	child.stageX = child.x + this.stageX;
 	child.stageY = child.y + this.stageY;
+	this.layout();
 }
 
 /**
@@ -614,13 +616,27 @@ DisplayObjectContainer.prototype.validateProperties = function(child){
  */
 DisplayObjectContainer.prototype.addChild = function(child) {
 	if(this._children.indexOf(child) == -1) {
-		this.validateProperties(child);
 		this._children.push(child);
 		child.parent = this;
+		this.validateProperties(child);
 	} else {
 		trace("显示列表中已经存在了" + child + "对象实例", Log.ERROR)
 	}
 	return child;
+}
+
+DisplayObjectContainer.prototype.layout = function(){
+	var children = this.getChildren();
+	var numChildren =this.numChildren;
+	var child;
+	for(var i=0;i<numChildren;i++){
+		child = children[i];
+		if(child instanceof DisplayObjectContainer){
+			child.layout();
+		}
+		child.stageX = child.x + this.stageX;
+		child.stageY = child.y + this.stageY;
+	}
 }
 
 /**
@@ -637,6 +653,7 @@ DisplayObjectContainer.prototype.addChildren = function() {
 			trace(child + "不是DisplayObject的实例", Log.WARN);
 		}
 	}
+	this.validateProperties(child);
 }
 /**
  * 将一个 DisplayObject 子实例添加到该 DisplayObjectContainer 实例中。
@@ -807,7 +824,18 @@ Bitmap.prototype.render = function(){
 		rect = bd.getRect();
 	}
 	if(bd.loaded){
-		Flex.context.drawImage(bd.content,rect.x,rect.y,rect.w,rect.h,this.stageX,this.stageY,this.width,this.height);
+		var width,height;
+		if(this.width){
+			width = this.width;	
+		}else{
+			width = rect.w;
+		}
+		if(this.height){
+			height = this.height;
+		}else{
+			height = rect.h;
+		}
+		Flex.context.drawImage(bd.content,rect.x,rect.y,rect.w,rect.h,this.stageX,this.stageY,width,height);
 	}
 }
 
@@ -1014,7 +1042,7 @@ HGroup.prototype.layout = function(){
 			children[i].stageX = this.stageX;
 			children[i].x = 0;
 		}
-		children[i].stageY = this.stageY;
+		children[i].stageY = this.stageY+children[i].stageY;
 		this.width = children[i].x+children[i].width;
 		trace(i,this.width,children[i].x);
 	}
