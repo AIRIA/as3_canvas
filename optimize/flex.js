@@ -1,10 +1,18 @@
+/**
+ * @class 管理应用程序的单例类  此类不能实例化
+ */
 var Flex = function() {
 	var scaleX;
 	//targetWidth/realWidth 构成的比例 用来缩放程序
 	var scaleY;
 	//targetHeight/realHeight
+	/**
+	 * canvas上下文
+	 */
 	var context;
-	//canvas 上下文
+	/**
+	 * 保存canvas的全局属性
+	 */
 	var global = {};
 	
 	var device = "mobile";
@@ -36,6 +44,7 @@ var Flex = function() {
 	}
 	/**
 	 * 安全执行方法 避免异常退出
+	 * @private
 	 */
 	function safeRun(handler){
 		var args = Array.prototype.slice.call(arguments);
@@ -49,6 +58,7 @@ var Flex = function() {
 	
 	/**
 	 * 根据设备类型初始化事件监听器
+	 * @private
 	 */
 	function initEventListener(canvas){
 		if(window.navigator.userAgent.indexOf("Android")==-1){
@@ -60,19 +70,30 @@ var Flex = function() {
 		EventManager.addHandler(canvas,TouchEvent.TOUCH_START,touchStartHandler);
 		EventManager.addHandler(canvas,TouchEvent.TOUCH_END,touchEndHandler);
 	}
-	
+	/**
+	 * 鼠标或者手指按下的时候触发 
+	 * @private
+	 */
 	function touchStartHandler(event){
+		//禁止滚动
+		event.preventDefault();
 		//按下的时候 才开始监听touchmove事件
 		EventManager.addHandler(event.target,TouchEvent.TOUCH_MOVE,touchMoveHandler);
 		safeRun(startEventListener,event,stage);
 	}
-	
+	/**
+	 * 鼠标或者手指按下 并拖动的时候触发
+	 * @private
+	 */
 	function touchMoveHandler(event){
 		//禁止滚动
 		event.preventDefault();
 		safeRun(startEventListener,event,stage);
 	}
-	
+	/**
+	 * 鼠标或者手指抬起的时候
+	 * @private
+	 */
 	function touchEndHandler(event){
 		EventManager.removeHandler(event.target,TouchEvent.TOUCH_MOVE,touchMoveHandler);
 		safeRun(startEventListener,event,stage);
@@ -154,16 +175,19 @@ var Flex = function() {
 }();
 
 /**
- * FlexEvent 类作为创建 Event 对象的基类，当发生事件时，Event 对象将作为参数传递给事件侦听器。 
+ * @class FlexEvent 类作为创建 Event 对象的基类，当发生事件时，Event 对象将作为参数传递给事件侦听器。
+ * @param {String} 事件类型 
+ * @description FlexEvent 类的属性包含有关事件的基本信息
+ * @constructor 构造方法
  */
 function FlexEvent(type){
 	/**
-	 * 事件目标
+	 * @descrption [read-only] 事件目标。 
 	 */
 	this.target = null;
 	
 	/**
-	 * 
+	 * [read-only] 当前正在使用某个事件侦听器处理 Event 对象的对象。
 	 */
 	this.currentTarget = null;
 	/**
@@ -172,11 +196,16 @@ function FlexEvent(type){
 	this.type = type;
 	
 	/**
-	 * 指示事件是否为冒泡事件。 
+	 * [read-only] 指示事件是否为冒泡事件。
 	 */
 	this.bubbles = false;
-	
+	/**
+	 * 是不是要停止事件传播 
+	 */
 	this._stopPropagation = false;
+	/**
+	 * 是不是要停止事件传播 并且立刻停止方法的执行
+	 */
 	this._stopImmeditaPropagation = false;
 }
 
@@ -191,7 +220,7 @@ FlexEvent.prototype.stopImmediatePropagation = function(){
 }
 
 /**
- * EventDispatcher 用于添加或删除事件侦听器的方法，检查是否已注册特定类型的事件侦听器，并调度事件。，并且是 DisplayObject 类的基类。
+ * @class EventDispatcher 用于添加或删除事件侦听器的方法，检查是否已注册特定类型的事件侦听器，并调度事件。，并且是 DisplayObject 类的基类。
  */
 function EventDispatcher(){
 	 this.events = {};
@@ -261,7 +290,7 @@ EventDispatcher.prototype = {
 
 
 /**
- * 事件管理实例
+ * @class 事件管理实例 此类不能实例化
  */
 var EventManager = {
 	addHandler:function(element,type,handler){
@@ -288,7 +317,7 @@ var EventManager = {
 }
 
 /**
- * 用来在控制台打印消息
+ * @class 用来在控制台打印消息
  */
 function trace() {
 	var logType = ['log', 'error', 'info', 'warn'];
@@ -312,8 +341,9 @@ function trace() {
 }
 
 /**
- * DisplayObject 类是可放在显示列表中的所有对象的基类
+ * @class DisplayObject 类是可放在显示列表中的所有对象的基类
  * @param {Object} 配置一些属性
+ * @extends EventDispatcher
  */
 function DisplayObject(config) {
 	EventDispatcher.call(this);
@@ -324,16 +354,40 @@ function DisplayObject(config) {
 	this.stageY = config.stageY || 0;
 	this._width = 0;
 	this._height = 0;
+	/**
+	 * @property
+	 */
 	this.alpha = config.alpha || 1;
 	this.scaleX = config.scaleX || 1;
 	this.scaleY = config.scaleY || 1;
+	/**
+	 * @property
+	 */
 	this.visible = config.visible || true;
+	/**
+	 * 旋转角度
+	 * @property
+	 */
 	this.rotation = config.rotation || 0;
+	/**
+	 * @property
+	 */
 	this.mask = null;
-	this.id
+	/**
+	 * 父组件列表
+	 * @property
+	 */
 	this.parent = null;
+	/**
+	 * canvas上下文
+	 * @property
+	 */
 	this.context = Flex.context;
 	Object.defineProperties(this, {
+		/**
+		 * 显示对象的宽度
+		 * @property
+		 */
 		width : {
 			get : function() {
 				return this._width;
@@ -363,6 +417,9 @@ function DisplayObject(config) {
 					this._x = value;
 					if(this.parent){
 						this.stageX = this._x+this.parent.stageX;
+						if(this.layout){
+							this.layout();
+						}
 					}
 				}
 			}
@@ -375,7 +432,10 @@ function DisplayObject(config) {
 				if(this._y!=value){
 					this._y = value;
 					if(this.parent){
-						this.stageX = this._x+this.parent.stageY;
+						this.stageY = this._y+this.parent.stageY;
+						if(this.layout){
+							this.layout();
+						}
 					}
 				}
 			}
@@ -416,7 +476,7 @@ DisplayObject.prototype.isUnderPoint = function(touch){
 }
 
 /**
- * Graphics 类包含一组可用来创建矢量形状的方法。 支持绘制的显示对象包括 Sprite 和 Shape 对象。
+ * @class Graphics 类包含一组可用来创建矢量形状的方法。 支持绘制的显示对象包括 Sprite 和 Shape 对象。
  * @param{DisplayObject}
  */
 function Graphics(displayObj) {
@@ -490,7 +550,7 @@ Graphics.prototype = {
 }
 
 /**
- * 只用来绘制图形 不具有交互性
+ * @class 只用来绘制图形 不具有交互性
  */
 function Shape(config) {
 	DisplayObject.call(this, config);
@@ -517,7 +577,7 @@ Shape.prototype.render = function(){
 }
 
 /**
- * 显示列表的容器类
+ * @class 显示列表的容器类
  * @param {JSON} 配置属性
  * @extends {DisplayObject}
  */
@@ -661,7 +721,9 @@ DisplayObjectContainer.prototype.swapChildren = function(child1, child2) {
 	childList[ind2] = child1;
 	childList[ind1] = child2;
 }
-
+/**
+ * @class Stage是显示列表的顶级容器
+ */
 function Stage(config){
 	DisplayObjectContainer.call(this,config);
 	this.stageWidth = Flex.global.width;
@@ -671,7 +733,7 @@ function Stage(config){
 Flex.inherit(Stage,DisplayObjectContainer);
 
 /**
- * Sprite 类是基本显示列表构造块：一个可显示图形并且也可包含子项的显示列表节点。
+ * @class Sprite 类是基本显示列表构造块：一个可显示图形并且也可包含子项的显示列表节点。
  */
 function Sprite(config){
 	DisplayObjectContainer.call(this,config);
@@ -711,7 +773,7 @@ Sprite.prototype.render = function(){
 }
 
 /**
- * Bitmap 类表示用于表示位图图像的显示对象。
+ * @class Bitmap 类表示用于表示位图图像的显示对象。
  */
 function Bitmap(bitmapData,rect,config){
 	DisplayObject.call(this,config);
@@ -750,7 +812,7 @@ Bitmap.prototype.render = function(){
 }
 
 /**
- * 继承Image 保存Image的信息
+ * @class 继承Image 保存Image的信息
  */
 function BitmapData(x,y,width,height){
 	this.content = null;
@@ -792,7 +854,7 @@ BitmapData.prototype.getRect = function(){
 }
 
 /**
- * TextFormat 类描述字符格式设置信息。 使用 TextFormat 类可以为文本字段创建特定的文本格式
+ * @class TextFormat 类描述字符格式设置信息。 使用 TextFormat 类可以为文本字段创建特定的文本格式
  */
 function TextFormat(config){
 	config = config || {};
@@ -811,7 +873,7 @@ function TextFormat(config){
 }
 
 /**
- * TextField 类用于创建显示对象以显示和输入文本。
+ * @class TextField 类用于创建显示对象以显示和输入文本。
  */
 function TextField(config){
 	DisplayObject.call(this,config);
@@ -855,7 +917,7 @@ TextField.prototype.render = function(){
 }
 
 /**
- * Button 组件表示常用的矩形按钮
+ * @class Button 组件表示常用的矩形按钮
  */
 function Button(upskin,downskin,config){
 	config = config ||{};
@@ -911,13 +973,29 @@ function Button(upskin,downskin,config){
 }
 Flex.inherit(Button,DisplayObjectContainer);
 
+/**
+ * @class 横向布局的容器
+ */
 function HGroup(config){
 	config = config || {};
 	Sprite.call(this,config);
 	/**
 	 * 元素于元素之间的间距
 	 */
-	this.gap = config.gap||0;
+	this._gap = config.gap||0;
+	Object.defineProperties(this,{
+		gap:{
+			get:function(){
+				return this._gap;
+			},
+			set:function(value){
+				if(this._gap!=value){
+					this._gap = value;
+					this.layout();
+				}
+			}	
+		}
+	});
 }
 
 Flex.inherit(HGroup,Sprite);
@@ -931,11 +1009,15 @@ HGroup.prototype.layout = function(){
 	for(var i=0;i<this.numChildren;i++){
 		if(i){
 			children[i].x = this.width+this.gap;
+			children[i].stageX = children[i].x + this.stageX;
 		}else{
+			children[i].stageX = this.stageX;
 			children[i].x = 0;
 		}
+		children[i].stageY = this.stageY;
+		this.width = children[i].x+children[i].width;
+		trace(i,this.width,children[i].x);
 	}
-	this.width = children[this.numChildren-1].x+children[this.numChildren].width;
 }
 
 /**
@@ -965,6 +1047,9 @@ function Rectangle(config){
 //-----------FlexUtil-----------------
 //-----------Consts-------------------
 
+/**
+ * @class 
+ */
 var FlexUtil = {
 	/**
 	 * 从指定的数组中移除元素
@@ -983,7 +1068,7 @@ var FlexUtil = {
 
 
 /**
- * 文本对齐方式
+ * @class 文本对齐方式
  */
 var TextAlign = {
 	START:'start',
@@ -993,7 +1078,7 @@ var TextAlign = {
 	CENTER:'center'
 }
 /**
- * 文本的基线
+ * @class 文本的基线
  */
 var TextBaseline = {
 	TOP:'top',
@@ -1014,7 +1099,7 @@ var LineCap = {
 }
 
 /**
- * 日志打印级别 常量
+ * @class 日志打印级别 常量
  */
 var Log = {
 	ERROR : 'error',
@@ -1022,7 +1107,7 @@ var Log = {
 	WARN : 'warn'
 }
 /**
- * 触摸事件
+ * @class 触摸事件
  */
 var TouchEvent = {
 	TOUCH_START:'touchstart',
