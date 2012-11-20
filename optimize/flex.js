@@ -652,8 +652,8 @@ DisplayObjectContainer.prototype.addChildren = function() {
 		} else {
 			trace(child + "不是DisplayObject的实例", Log.WARN);
 		}
+		this.validateProperties(child);
 	}
-	this.validateProperties(child);
 }
 /**
  * 将一个 DisplayObject 子实例添加到该 DisplayObjectContainer 实例中。
@@ -1052,6 +1052,7 @@ Flex.inherit(HGroup,Sprite);
  * 刷新布局
  */
 HGroup.prototype.layout = function(){
+	Sprite.prototype.layout.call(this);
 	this.width = 0;
 	var children = this.getChildren();
 	for(var i=0;i<this.numChildren;i++){
@@ -1062,9 +1063,8 @@ HGroup.prototype.layout = function(){
 			children[i].stageX = this.stageX;
 			children[i].x = 0;
 		}
-		children[i].stageY = this.stageY+children[i].stageY;
+		children[i].stageY = this.stageY+children[i].y;
 		this.width = children[i].x+children[i].width;
-		trace(i,this.width,children[i].x);
 	}
 }
 
@@ -1073,13 +1073,7 @@ HGroup.prototype.layout = function(){
  */
 HGroup.prototype.addChild = function(child){
 	Sprite.prototype.addChild.call(this,child);
-	//第一个child 忽略gap
-	if(this.numChildren!=1){
-		child.x = this.width + this.gap;
-	}else{
-		child.x = 0;
-	}
-	this.width = child.x + child.width;
+	trace(child.x,child.width,this.width,this.gap);
 }
 
 /**
