@@ -1013,6 +1013,8 @@ function Button(upskin,downskin,config){
 			}
 		}
 	});
+	
+	this.currentSkin = self.upSkin;
 }
 Flex.inherit(Button,DisplayObjectContainer);
 Button.prototype.render = function(){
