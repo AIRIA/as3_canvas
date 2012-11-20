@@ -662,6 +662,8 @@ DisplayObjectContainer.prototype.addChildren = function() {
  */
 DisplayObjectContainer.prototype.addChildAt = function(child, index) {
 	this._children.splice(index - 1, 0, child);
+	this.validateProperties(child);
+	child.parent =this;
 	return child;
 }
 /**
@@ -962,6 +964,17 @@ function Button(upskin,downskin,config){
 	this._label = config.label;
 	this._textField = null;
 	this._textFormat = null;
+	this.upSkin.addEventListener(TouchEvent.TOUCH_START,startHandler);
+	this.downSkin.addEventListener(TouchEvent.TOUCH_END,endHandler);
+	var self = this;
+	function startHandler(event){
+		self.currentSkin = self.downSkin;
+	}
+	
+	function endHandler(event){
+		self.currentSkin = self.upSkin;
+	}
+	
 	Object.defineProperties(this,{
 		label:{
 			get:function(){
@@ -987,19 +1000,24 @@ function Button(upskin,downskin,config){
 					//皮肤发生改变的时候 如果当前皮肤已经添加到了显示列表中 先移除
 					if(this.contains(this._currentSkin)){
 						this.removeChild(this._currentSkin);
-					}else{
-						trace("set")
-						this._currentSkin = value;
-						this.addChildAt(this._currentSkin,0);
 					}
+					this._currentSkin = value;
+					this.addChildAt(this._currentSkin,0);
+					this.width = this._currentSkin.width;
+					this.height = this._currentSkin.height;
 				}else if(!this.contains(this._currentSkin)){
 					this.addChildAt(this._currentSkin,0);
+					this.width = this._currentSkin.width;
+					this.height = this._currentSkin.height;
 				}
 			}
 		}
 	});
 }
 Flex.inherit(Button,DisplayObjectContainer);
+Button.prototype.render = function(){
+	//TO-DO
+}
 
 /**
  * @class 横向布局的容器
