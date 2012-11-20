@@ -144,6 +144,7 @@ var Flex = function() {
 	 */
 	function render(displayObj){
 		if(!(displayObj instanceof Stage)){
+			if(displayObj.render)
 			displayObj.render();
 		}
 		var numChildren = displayObj.numChildren;
@@ -830,12 +831,12 @@ Bitmap.prototype.render = function(){
 		if(this.width){
 			width = this.width;	
 		}else{
-			width = rect.w;
+			this.width = width = rect.w;
 		}
 		if(this.height){
 			height = this.height;
 		}else{
-			height = rect.h;
+			this.height = height = rect.h;
 		}
 		Flex.context.drawImage(bd.content,rect.x,rect.y,rect.w,rect.h,this.stageX,this.stageY,width,height);
 	}
